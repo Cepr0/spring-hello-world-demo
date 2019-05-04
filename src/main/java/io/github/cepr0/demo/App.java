@@ -8,12 +8,21 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import java.util.Random;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 @Configuration
 @ComponentScan
+@EnableAsync
 public class App {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
@@ -31,10 +40,11 @@ public class App {
 		return context;
 	}
 
-	public static void main(final String[] args) {
+	public static void main(final String[] args) throws InterruptedException {
 		var context = new AnnotationConfigApplicationContext(App.class);
 		App.context = context;
 		context.publishEvent(new ReadyEvent(context));
+		SECONDS.sleep(2);
 		context.close();
 	}
 
@@ -43,10 +53,31 @@ public class App {
 		return new Random();
 	}
 
+	@Bean
+	public ManualBean manualBean(ApplicationContext context) {
+		var factory = context.getAutowireCapableBeanFactory();
+		return factory.createBean(ManualBean.class);
+	}
+
+	@Bean
+	public TaskExecutor taskExecutor() {
+		CustomizableThreadFactory factory = new CustomizableThreadFactory();
+		factory.setThreadNamePrefix("task-");
+		return new SimpleAsyncTaskExecutor(factory);
+	}
+
+	@Async
 	@EventListener
-	public void onAppReady(ReadyEvent event) {
-		Coin coin = event.getContext().getBean(Coin.class);
+	public void onAppReady(ContextRefreshedEvent event) {
+		ApplicationContext context = (ApplicationContext) event.getSource();
+		Coin coin = context.getBean(Coin.class);
 		LOGGER.info("Coin toss: {}", coin.toss());
+
+		ManualBean manualBean = (ManualBean) context.getBean("manualBean");
+		LOGGER.info("Manual bean: " + manualBean.toss());
+
+		ManualBean mb = (ManualBean) context.getBean("manualB");
+		LOGGER.info("Manual defined bean: " + manualBean.toss());
 
 		LOGGER.info("Greetings: {}", greeter.greet());
 	}
