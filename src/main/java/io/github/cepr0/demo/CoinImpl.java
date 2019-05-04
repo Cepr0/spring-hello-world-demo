@@ -13,6 +13,7 @@ public class CoinImpl implements Coin {
 		this.random = newRandom;
 	}
 
+	@Override
 	public boolean toss() {
 		return random.nextBoolean();
 	}

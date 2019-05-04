@@ -11,6 +11,7 @@ public class GreeterTargetImpl implements GreeterTarget {
 		this.coin = newCoin;
 	}
 
+	@Override
 	public String get() {
 		if (coin.toss()) {
 			return "World";

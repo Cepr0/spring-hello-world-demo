@@ -6,7 +6,7 @@ public class StubRandom extends Random {
 
 	private boolean constantResult;
 
-	public final void setConstantResult(final boolean newResult) {
+	public void setConstantResult(final boolean newResult) {
 		this.constantResult = newResult;
 	}
 

@@ -8,6 +8,7 @@ public class StubCoin implements Coin {
 		this.constantResult = newResult;
 	}
 
+	@Override
 	public boolean toss() {
 		return constantResult;
 	}
